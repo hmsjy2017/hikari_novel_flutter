@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../network/request.dart';
+import 'chinese_line_break.dart';
 import 'paper_curl_pager.dart';
 
 class HorizontalReadPage extends StatefulWidget {
@@ -482,10 +483,19 @@ class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBin
         final lineMatches = reg.allMatches(source).map((match) => match.group(0) ?? '').toList();
         String rowText = '';
         double currentRowWidth = 0;
+        final reservedPunctuationWidth = parameter.symbolWidth.clamp(0, parameter.width / 4).toDouble();
+        final normalWrapWidth = (parameter.width - reservedPunctuationWidth).clamp(0, parameter.width).toDouble();
 
         for (final item in lineMatches) {
           final charInfo = charsFromToken(item, parameter, chineseExp, wordExp, symbolExp, newLineExp);
-          if ((currentRowWidth + charInfo.width) > parameter.width && rowText.isNotEmpty) {
+          final isLineStartProhibitedPunctuation = isChineseLeadingPunctuation(charInfo.text);
+          final wrapWidth = isLineStartProhibitedPunctuation ? parameter.width : normalWrapWidth;
+          if ((currentRowWidth + charInfo.width) > wrapWidth && rowText.isNotEmpty) {
+            if (isLineStartProhibitedPunctuation && (currentRowWidth + charInfo.width) <= parameter.width) {
+              rowText += charInfo.text;
+              currentRowWidth += charInfo.width;
+              continue;
+            }
             allRows.add(TextRow(rowText, paragraphEnd: false));
             rowText = '';
             currentRowWidth = 0;
