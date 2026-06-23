@@ -4,7 +4,23 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../router/route_path.dart';
 import '../../../network/request.dart';
-import 'chinese_line_break.dart';
+
+const String _wordJoiner = '\u2060';
+const String _lineStartProhibitedPunctuation = '，。、？！：；）】》〉」』”’…—～,.!?:;)]}>';
+
+final RegExp _lineStartProhibitedPunctuationExp = RegExp(
+  '([${RegExp.escape(_lineStartProhibitedPunctuation)}])',
+);
+final RegExp _wordJoinerBeforeLineStartProhibitedPunctuationExp = RegExp(
+  '$_wordJoiner(?=[${RegExp.escape(_lineStartProhibitedPunctuation)}])',
+);
+
+String _keepLineStartProhibitedPunctuationWithPreviousGlyph(String text) {
+  if (text.isEmpty) return text;
+  return text
+      .replaceAll(_wordJoinerBeforeLineStartProhibitedPunctuationExp, '')
+      .replaceAllMapped(_lineStartProhibitedPunctuationExp, (match) => '$_wordJoiner${match.group(1)}');
+}
 
 class VerticalReadPage extends StatefulWidget {
   final String text;
@@ -176,7 +192,7 @@ class VerticalReadPageState extends State<VerticalReadPage> {
               WidgetSpan(
                 child: SizedBox(width: textStyle.fontSize! * paraIndent), //按汉字宽度缩进
               ),
-              TextSpan(text: keepChinesePunctuationWithPreviousLine(content)),
+              TextSpan(text: _keepLineStartProhibitedPunctuationWithPreviousGlyph(content)),
             ],
           ),
         ),

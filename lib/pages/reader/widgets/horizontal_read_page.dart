@@ -3,8 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../network/request.dart';
-import 'chinese_line_break.dart';
 import 'paper_curl_pager.dart';
+
+const String _lineStartProhibitedPunctuation = '，。、？！：；）】》〉」』”’…—～,.!?:;)]}>';
+
+bool _isLineStartProhibitedPunctuation(String text) =>
+    text.isNotEmpty && _lineStartProhibitedPunctuation.contains(text[0]);
 
 class HorizontalReadPage extends StatefulWidget {
   final String text;
@@ -488,7 +492,7 @@ class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBin
 
         for (final item in lineMatches) {
           final charInfo = charsFromToken(item, parameter, chineseExp, wordExp, symbolExp, newLineExp);
-          final isLineStartProhibitedPunctuation = isChineseLeadingPunctuation(charInfo.text);
+          final isLineStartProhibitedPunctuation = _isLineStartProhibitedPunctuation(charInfo.text);
           final wrapWidth = isLineStartProhibitedPunctuation ? parameter.width : normalWrapWidth;
           if ((currentRowWidth + charInfo.width) > wrapWidth && rowText.isNotEmpty) {
             if (isLineStartProhibitedPunctuation && (currentRowWidth + charInfo.width) <= parameter.width) {
