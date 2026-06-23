@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../router/route_path.dart';
 import '../../../network/request.dart';
+import 'chinese_line_break.dart';
 
 class VerticalReadPage extends StatefulWidget {
   final String text;
@@ -175,7 +176,7 @@ class VerticalReadPageState extends State<VerticalReadPage> {
               WidgetSpan(
                 child: SizedBox(width: textStyle.fontSize! * paraIndent), //按汉字宽度缩进
               ),
-              TextSpan(text: content),
+              TextSpan(text: keepChinesePunctuationWithPreviousLine(content)),
             ],
           ),
         ),
