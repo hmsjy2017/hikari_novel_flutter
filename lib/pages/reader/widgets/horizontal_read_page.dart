@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../network/request.dart';
+import 'chinese_line_break.dart';
 import 'paper_curl_pager.dart';
 
 class HorizontalReadPage extends StatefulWidget {
@@ -486,6 +487,11 @@ class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBin
         for (final item in lineMatches) {
           final charInfo = charsFromToken(item, parameter, chineseExp, wordExp, symbolExp, newLineExp);
           if ((currentRowWidth + charInfo.width) > parameter.width && rowText.isNotEmpty) {
+            if (isChineseLeadingPunctuation(charInfo.text)) {
+              rowText += charInfo.text;
+              currentRowWidth += charInfo.width;
+              continue;
+            }
             allRows.add(TextRow(rowText, paragraphEnd: false));
             rowText = '';
             currentRowWidth = 0;
@@ -691,7 +697,7 @@ class NovelTextPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     double y = 0;
     for (final row in rows) {
-      final textSpan = TextSpan(text: row.text, style: style);
+      final textSpan = TextSpan(text: keepChinesePunctuationWithPreviousLine(row.text), style: style);
       final textPainter = TextPainter(text: textSpan, maxLines: 1, textAlign: TextAlign.justify, textDirection: TextDirection.ltr);
       textPainter.layout(maxWidth: size.width);
       textPainter.paint(canvas, Offset(0, y));
