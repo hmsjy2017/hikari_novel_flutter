@@ -697,7 +697,11 @@ class NovelTextPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     double y = 0;
     for (final row in rows) {
-      final textSpan = TextSpan(text: keepChinesePunctuationWithPreviousLine(row.text), style: style);
+      // Lines are already split by [splitText], including the Chinese
+      // line-start punctuation rule. Do not insert word joiners here: they can
+      // change single-line TextPainter layout and clip trailing glyphs when a
+      // row intentionally keeps punctuation at the line end.
+      final textSpan = TextSpan(text: row.text, style: style);
       final textPainter = TextPainter(text: textSpan, maxLines: 1, textAlign: TextAlign.justify, textDirection: TextDirection.ltr);
       textPainter.layout(maxWidth: size.width);
       textPainter.paint(canvas, Offset(0, y));
