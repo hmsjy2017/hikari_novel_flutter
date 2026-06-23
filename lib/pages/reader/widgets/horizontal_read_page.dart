@@ -484,9 +484,32 @@ class _HorizontalReadPageState extends State<HorizontalReadPage> with WidgetsBin
         String rowText = '';
         double currentRowWidth = 0;
 
-        for (final item in lineMatches) {
+        for (int index = 0; index < lineMatches.length; index++) {
+          final item = lineMatches[index];
           final charInfo = charsFromToken(item, parameter, chineseExp, wordExp, symbolExp, newLineExp);
-          if ((currentRowWidth + charInfo.width) > parameter.width && rowText.isNotEmpty) {
+          double followingLeadingPunctuationWidth = 0;
+          if (!isChineseLeadingPunctuation(charInfo.text)) {
+            for (int nextIndex = index + 1; nextIndex < lineMatches.length; nextIndex++) {
+              final nextCharInfo = charsFromToken(
+                lineMatches[nextIndex],
+                parameter,
+                chineseExp,
+                wordExp,
+                symbolExp,
+                newLineExp,
+              );
+              if (!isChineseLeadingPunctuation(nextCharInfo.text)) {
+                break;
+              }
+              followingLeadingPunctuationWidth += nextCharInfo.width;
+            }
+          }
+
+          final widthWithCurrent = currentRowWidth + charInfo.width;
+          final widthWithLeadingPunctuation = widthWithCurrent + followingLeadingPunctuationWidth;
+          final rowHasVisibleText = rowText.trim().isNotEmpty;
+          if (rowHasVisibleText &&
+              (widthWithCurrent > parameter.width || widthWithLeadingPunctuation > parameter.width)) {
             if (isChineseLeadingPunctuation(charInfo.text)) {
               rowText += charInfo.text;
               currentRowWidth += charInfo.width;
@@ -697,10 +720,22 @@ class NovelTextPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     double y = 0;
     for (final row in rows) {
-      final textSpan = TextSpan(text: keepChinesePunctuationWithPreviousLine(row.text), style: style);
+      // Lines are already split by [splitText], including the Chinese
+      // line-start punctuation rule. Do not insert word joiners here: they can
+      // change single-line TextPainter layout and clip trailing glyphs when a
+      // row intentionally keeps punctuation at the line end.
+      final textSpan = TextSpan(text: row.text, style: style);
       final textPainter = TextPainter(text: textSpan, maxLines: 1, textAlign: TextAlign.justify, textDirection: TextDirection.ltr);
-      textPainter.layout(maxWidth: size.width);
-      textPainter.paint(canvas, Offset(0, y));
+      textPainter.layout(maxWidth: double.infinity);
+      if (textPainter.width > size.width && size.width > 0) {
+        canvas.save();
+        canvas.translate(0, y);
+        canvas.scale(size.width / textPainter.width, 1);
+        textPainter.paint(canvas, Offset.zero);
+        canvas.restore();
+      } else {
+        textPainter.paint(canvas, Offset(0, y));
+      }
       y += fontHeight;
       if (row.paragraphEnd) {
         y += paragraphSpacing;
